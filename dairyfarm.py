@@ -1,81 +1,77 @@
 import streamlit as st
 import pandas as pd
-import gspread
 import plotly.express as px
-from datetime import datetime
 
-# పేజీ కాన్ఫిగరేషన్
+# Page Configuration
 st.set_page_config(
-    page_title="డైరీ ఫామ్ డాష్బోర్డ్",
+    page_title="Dairy Farm Dashboard",
     page_icon="🐄",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# గూగుల్ షీట్ పూర్తి URL
-sheet_url = "https://docs.google.com/spreadsheets/d/15-g1ftyrveaoJKXziQFlFLTJmqyzhgqFoJG8vuyuknc/edit?usp=drivesdk"
+# Extracting Google Sheet ID from your URL
+sheet_id = "15-g1ftyrveaoJKXziQFlFLTJmqyzhgqFoJG8vuyuknc"
+csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
 
-# డేటా లోడింగ్ ఫంక్షన్
-@st.cache_resource
+# Data Loading Function (Direct CSV export via public link)
+@st.cache_data
 def load_data(url):
     try:
-        gc = gspread.public()
-        workbook = gc.open_by_url(url)
-        worksheet = workbook.get_worksheet(0)
-        data = worksheet.get_all_records()
-        return pd.DataFrame(data)
+        data = pd.read_csv(url)
+        return data
     except Exception as e:
-        st.error(f"డేటాని రీడ్ చేయడంలో లోపం: {e}")
+        st.error(f"Error reading data: {e}")
         return pd.DataFrame()
 
-# డేటాని లోడ్ చేయడం
-df = load_data(sheet_url)
+# Loading the data
+df = load_data(csv_url)
 
-# సైడ్బార్లో ఆప్షన్స్
-st.sidebar.title("మెనూ")
-menu_option = st.sidebar.radio("పేజీని ఎంచుకోండి:", ["హోమ్", "డేటా వ్యూ", "విశ్లేషణ"])
+# Sidebar Options
+st.sidebar.title("Menu")
+menu_option = st.sidebar.radio("Select a page:", ["Home", "Data View", "Analysis"])
 
-# ప్రధాన శీర్షిక
-st.title("🐄 డైరీ ఫామ్ మేనేజ్మెంట్ డాష్బోర్డ్")
-st.write("ఇక్కడ మీ రోజువారీ డైరీ డేటా మరియు విశ్లేషణలు ఉంటాయి.")
+# Main Title
+st.title("🐄 Dairy Farm Management Dashboard")
+st.write("Track and analyze your daily dairy farm operations here.")
 
 if df.empty:
-    st.info("డేటా లోడ్ అవ్వలేదు లేదా షీట్ ఖాళీగా ఉంది. గూగుల్ షీట్ 'Anyone with the link can view' కింద పబ్లిక్గా షేర్ చేయబడిందని నిర్ధారించుకోండి.")
+    st.info("Data could not be loaded or the sheet is empty. Please ensure your Google Sheet is shared as 'Anyone with the link can view'.")
 else:
-    if menu_option == "హోమ్":
-        st.write("### స్వాగతం!")
-        st.write("ఈ డాష్బోర్డ్ ద్వారా మీ డైరీ ఫామ్ డేటాని ఎప్పటికప్పుడు సులభంగా పర్యవేక్షించవచ్చు.")
+    if menu_option == "Home":
+        st.write("### Welcome!")
+        st.write("This dashboard helps you monitor your dairy farm's key metrics effortlessly.")
         
-        # ముఖ్యమైన గణాంకాలు
+        # Key Statistics
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric(label="మొత్తం రికార్డులు", value=len(df))
+            st.metric(label="Total Records", value=len(df))
         with col2:
-            st.metric(label="తొలి తేదీ", value=df['Date'].min() if 'Date' in df.columns else "N/A")
+            st.metric(label="Earliest Date", value=str(df['Date'].min()) if 'Date' in df.columns else "N/A")
         with col3:
-            st.metric(label="చివరి తేదీ", value=df['Date'].max() if 'Date' in df.columns else "N/A")
+            st.metric(label="Latest Date", value=str(df['Date'].max()) if 'Date' in df.columns else "N/A")
 
-    elif menu_option == "డేటా వ్యూ":
-        st.write("### ముడి డేటా (Raw Data)")
+    elif menu_option == "Data View":
+        st.write("### Raw Data Table")
         st.dataframe(df, use_container_width=True)
 
-    elif menu_option == "విశ్లేషణ":
-        st.write("### డేటా విజువలైజేషన్")
+    elif menu_option == "Analysis":
+        st.write("### Data Visualization")
         
         if 'MilkYield' in df.columns and 'Date' in df.columns:
             try:
-                # తేదీని సరియైన ఫార్మాట్కు మార్చడం
+                # Parsing the Date column to proper datetime format
                 df['Date'] = pd.to_datetime(df['Date'])
                 fig = px.line(
                     df, 
                     x='Date', 
                     y='MilkYield', 
-                    title='రోజువారీ పాల ఉత్పత్తి',
-                    labels={'MilkYield': 'పాల ఉత్పత్తి (లీటర్లు)', 'Date': 'తేదీ'},
+                    title='Daily Milk Production Trend',
+                    labels={'MilkYield': 'Milk Production (Liters)', 'Date': 'Date'},
                     template='plotly_white'
                 )
                 st.plotly_chart(fig, use_container_width=True)
             except Exception as e:
-                st.error(f"చార్ట్ రూపొందించడంలో లోపం: {e}")
+                st.error(f"Error creating chart: {e}")
         else:
-            st.warning("చార్ట్ చేయడానికి 'MilkYield' లేదా 'Date' కాలమ్స్ డేటాలో లేవు.")
+            st.warning("Chart cannot be displayed because 'MilkYield' or 'Date' columns are missing in the sheet.")
