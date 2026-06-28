@@ -1,0 +1,85 @@
+import streamlit as st
+from streamlit_option_menu import option_menu
+
+# Page setup
+st.set_page_config(page_title="Dairy Shop App", layout="centered")
+st.title("🥛 Dairy Shop")
+
+# 1. Top Navigation Bar (Buying / Selling)
+main_nav = option_menu(
+    menu_title=None, 
+    options=["Selling", "Buying"], 
+    icons=["shop", "cart-plus"], 
+    orientation="horizontal",
+    default_index=0,
+    styles={
+        "nav-link-selected": {"background-color": "#0078D7"} # Blue for main nav
+    }
+)
+
+# 2. Logic for the "Selling" Section
+if main_nav == "Selling":
+    
+    # Bottom/Sub Navigation Menu for Selling (The 4 Pages)
+    selling_menu = option_menu(
+        menu_title=None,
+        options=["Customers", "Products", "Reports", "Settings"],
+        icons=["people", "box", "graph-up", "gear"],
+        orientation="horizontal",
+        default_index=0,
+        styles={
+            "container": {"padding": "0!important", "background-color": "#f0f2f6", "margin-top": "10px"},
+            "icon": {"color": "black", "font-size": "16px"}, 
+            "nav-link": {"font-size": "14px", "text-align": "center", "margin":"0px", "--hover-color": "#e0e0e0"},
+            "nav-link-selected": {"background-color": "#02ab21"}, # Green for selling menu
+        }
+    )
+    
+    st.divider() # Visual separation
+    
+    # Page 1: Customers
+    if selling_menu == "Customers":
+        st.subheader("👥 Customer Management")
+        st.write("Track your daily buyers and subscription customers.")
+        with st.form("new_customer"):
+            st.text_input("Customer Name")
+            st.text_input("Phone Number")
+            st.selectbox("Subscription Type", ["None", "Daily Milk (Morning)", "Daily Milk (Evening)", "Both"])
+            st.form_submit_button("Add Customer")
+            
+    # Page 2: Products
+    elif selling_menu == "Products":
+        st.subheader("📦 Products & Stock")
+        st.write("Manage your available dairy items and selling prices.")
+        with st.form("new_product"):
+            st.text_input("Product Name (e.g., Curd 500g)")
+            st.number_input("Selling Price (₹)", min_value=1)
+            st.number_input("Current Stock", min_value=0)
+            st.form_submit_button("Update Product")
+            
+    # Page 3: Reports
+    elif selling_menu == "Reports":
+        st.subheader("📊 Sales Reports")
+        st.write("View your revenue and best-selling items.")
+        st.metric(label="Today's Total Sales", value="₹0.00")
+        st.info("Charts and graphs will appear here once sales are recorded.")
+        
+    # Page 4: Settings
+    elif selling_menu == "Settings":
+        st.subheader("⚙️ App Settings")
+        st.write("Configure your shop preferences.")
+        st.text_input("Shop Name", value="My Dairy Shop")
+        st.checkbox("Enable Dark Mode")
+        st.button("Save Settings")
+
+# 3. Logic for the "Buying" Section
+elif main_nav == "Buying":
+    st.divider()
+    st.subheader("🛒 Restocking & Purchases")
+    st.write("Log the supplies and milk you purchase from farmers or distributors.")
+    
+    with st.form("restock_form"):
+        st.selectbox("Supplier", ["Local Farmer A", "Distributor B", "Other"])
+        st.selectbox("Item Purchased", ["Raw Milk (Liters)", "Packaging Materials", "Other"])
+        st.number_input("Total Cost (₹)", min_value=1)
+        st.form_submit_button("Record Purchase")
